@@ -9,46 +9,45 @@ use strict 'subs', 'vars';
 use warnings;
 
 use Exporter 'import';
-our @EXPORT_OK = qw();
+our @EXPORT_OK = qw(
+                       get_features_decl
+                       get_feature_val
+                       module_declares_feature
+               );
 
-sub _get_features_decl {
+sub get_features_decl {
     my $mod = shift;
 
     # first, try to get features declaration from MODNAME::_ModuleFeatures's %FEATURES
     my $proxymod = "$mod\::_ModuleFeatures";
     (my $proxymodpm = "$proxymod.pm") =~ s!::!/!g;
-    eval { require $proxymodpm; 1 };
-    unless ($@) {
-        my $features = \%{"$proxymod\::FEATURES"};
-        return $features if scalar keys %$features;
-    }
+    my $features_decl = \%{"$proxymod\::FEATURES"};
+    return $features_decl if scalar keys %$features_decl;
 
     # second, try to get features declaration from MODNAME %FEATURES
-    (my $modpm = "$mod.pm") =~ s!::!/!g;
-    require $modpm;
+    $features_decl = \%{"$mod\::FEATURES"};
+    return $features_decl; # if scalar keys %$features_decl;
 
     # XXX compare the two if both declarations exist
-
-    \%{"$mod\::FEATURES"};
 }
 
 sub get_feature_val {
     my ($module_name, $feature_set_name, $feature_name) = @_;
 
-    my $features_decl = _get_features_decl($module_name);
+    my $features_decl = get_features_decl($module_name);
     return undef unless $features_decl->{features}{$feature_set_name};
 
-    my $val0 = $features_decl->{features}{$feature_set_name}{$feature};
+    my $val0 = $features_decl->{features}{$feature_set_name}{$feature_name};
     return ref $val0 eq 'HASH' ? $val0->{value} : $val0;
 }
 
 sub module_declares_feature {
     my ($module_name, $feature_set_name, $feature_name) = @_;
 
-    my $features_decl = _get_features_decl($module_name);
+    my $features_decl = get_features_decl($module_name);
     return undef unless $features_decl->{features}{$feature_set_name};
 
-    exists $features_decl->{features}{$feature_set_name}{$feature};
+    exists $features_decl->{features}{$feature_set_name}{$feature_name};
 }
 
 1;
