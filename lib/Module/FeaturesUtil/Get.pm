@@ -16,17 +16,34 @@ our @EXPORT_OK = qw(
                );
 
 sub get_features_decl {
-    my $mod = shift;
+    my ($mod, $load) = @_;
+
+    my $features_decl;
 
     # first, try to get features declaration from MODNAME::_ModuleFeatures's %FEATURES
-    my $proxymod = "$mod\::_ModuleFeatures";
-    (my $proxymodpm = "$proxymod.pm") =~ s!::!/!g;
-    my $features_decl = \%{"$proxymod\::FEATURES"};
-    return $features_decl if scalar keys %$features_decl;
+    {
+        my $proxymod = "$mod\::_ModuleFeatures";
+        (my $proxymodpm = "$proxymod.pm") =~ s!::!/!g;
+        $features_decl = \%{"$proxymod\::FEATURES"};
+        if ($load) {
+            eval { require $proxymodpm; 1 };
+            last if $@;
+        }
+        return $features_decl if scalar keys %$features_decl;
+    }
 
     # second, try to get features declaration from MODNAME %FEATURES
-    $features_decl = \%{"$mod\::FEATURES"};
-    return $features_decl; # if scalar keys %$features_decl;
+    {
+        if ($load) {
+            (my $modpm = "$mod.pm") =~ s!::!/!g;
+            eval { require $modpm; 1 };
+            last if $@;
+        }
+        $features_decl = \%{"$mod\::FEATURES"};
+        return $features_decl; # if scalar keys %$features_decl;
+    }
+
+    {};
 
     # XXX compare the two if both declarations exist
 }
