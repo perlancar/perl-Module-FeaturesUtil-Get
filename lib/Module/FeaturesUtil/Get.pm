@@ -37,12 +37,15 @@ sub get_features_decl {
     {
         my $proxymod = "$mod\::_ModuleFeatures";
         (my $proxymodpm = "$proxymod.pm") =~ s!::!/!g;
-        $features_decl = \%{"$proxymod\::FEATURES"};
         if ($load) {
             eval { require $proxymodpm; 1 };
             last if $@;
         }
-        return $features_decl if scalar keys %$features_decl;
+        $features_decl = { %{"$proxymod\::FEATURES"} };
+        if (scalar keys %$features_decl) {
+            $features_decl->{"x.source"} = "pm:$proxymod";
+            return $features_decl;
+        }
     }
 
     # second, try to get features declaration from MODNAME %FEATURES
@@ -52,8 +55,9 @@ sub get_features_decl {
             eval { require $modpm; 1 };
             last if $@;
         }
-        $features_decl = \%{"$mod\::FEATURES"};
-        return $features_decl; # if scalar keys %$features_decl;
+        $features_decl = { %{"$mod\::FEATURES"} };
+        $features_decl->{"x.source"} = "pm:$mod";
+        return $features_decl;
     }
 
     {};
