@@ -10,10 +10,23 @@ use warnings;
 
 use Exporter 'import';
 our @EXPORT_OK = qw(
+                       get_feature_set_spec
                        get_features_decl
                        get_feature_val
                        module_declares_feature
                );
+
+sub get_feature_set_spec {
+    my ($fsetname, $load) = @_;
+
+    my $mod = "Module::Features::$fsetname";
+    if ($load) {
+        (my $modpm = "$mod.pm") =~ s!::!/!g;
+        eval { require $modpm; 1 };
+        last if $@;
+    }
+    return \%{"$mod\::FEATURES_DEF"};
+}
 
 sub get_features_decl {
     my ($mod, $load) = @_;
@@ -99,6 +112,18 @@ sub module_declares_feature {
 
 =head1 FUNCTIONS
 
+=head2 get_feature_set_spec
+
+Usage:
+
+ my $feature_set_spec = get_feature_set_spec($feature_set_name);
+
+Feature set specification will be retrieved from the
+C<Module::Features::$feature_set_name> module. The module will NOT be loaded by
+this routine; you will need to load the module yourself.
+
+This module will also NOT check the validity of feature set specification.
+
 =head2 get_features_decl
 
 Usage:
@@ -110,7 +135,7 @@ variable, then from the module's C<%FEATURES>. Proxy module is
 C<$module_name>I<::_ModuleFeatures>. You have to load the modules yourself; this
 routine will not load the modules for you.
 
-This module will also NOT check the validity of features declaration.
+This routine will also NOT check the validity of features declaration.
 
 =head2 get_feature_val
 
@@ -130,7 +155,8 @@ Get the value of a feature from a module's features declaration.
 
 Features declaration is retrieved using L</get_features_decl>.
 
-This routine will also NOT check the feature set specification.
+This routine will also NOT check the validity of feature value against the
+specification's schema.
 
 =head2 module_declares_feature
 
