@@ -17,19 +17,25 @@ our @EXPORT_OK = qw(
                );
 
 sub get_feature_set_spec {
-    my ($fsetname, $load) = @_;
+    my ($fsetname, $load, $fatal_on_load_failure) = @_;
 
     my $mod = "Module::Features::$fsetname";
     if ($load) {
         (my $modpm = "$mod.pm") =~ s!::!/!g;
         eval { require $modpm; 1 };
-        last if $@;
+        if ($@) {
+            if ($fatal_on_load_failure) {
+                die $@;
+            } else {
+                return {};
+            }
+        }
     }
     return \%{"$mod\::FEATURES_DEF"};
 }
 
 sub get_features_decl {
-    my ($mod, $load) = @_;
+    my ($mod, $load, $fatal_on_load_failure) = @_;
 
     my $features_decl;
 
@@ -53,7 +59,13 @@ sub get_features_decl {
         if ($load) {
             (my $modpm = "$mod.pm") =~ s!::!/!g;
             eval { require $modpm; 1 };
-            last if $@;
+            if ($@) {
+                if ($fatal_on_load_failure) {
+                    die $@;
+                } else {
+                    return {};
+                }
+            }
         }
         $features_decl = { %{"$mod\::FEATURES"} };
         $features_decl->{"x.source"} = "pm:$mod";
