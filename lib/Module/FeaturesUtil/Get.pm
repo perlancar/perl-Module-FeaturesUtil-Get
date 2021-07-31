@@ -97,7 +97,7 @@ sub module_declares_feature {
 }
 
 1;
-# ABSTRACT: Get a feature
+# ABSTRACT: Get a feature from a module (following Module::Features specification)
 
 =head1 SYNOPSIS
 
@@ -124,6 +124,8 @@ sub module_declares_feature {
 
 
 =head1 DESCRIPTION
+
+See L<Module::Features/"GLOSSARY"> for terminology.
 
 
 =head1 FUNCTIONS
